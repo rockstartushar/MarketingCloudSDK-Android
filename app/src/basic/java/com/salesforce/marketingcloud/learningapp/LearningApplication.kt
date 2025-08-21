@@ -25,13 +25,14 @@
  */
 package com.salesforce.marketingcloud.learningapp
 
+import android.app.Application
 import com.salesforce.marketingcloud.MarketingCloudConfig
 import com.salesforce.marketingcloud.notifications.NotificationCustomizationOptions
 import com.salesforce.marketingcloud.proximity.ProximityNotificationCustomizationOptions
 
 class LearningApplication : BaseLearningApplication() {
 
-    override val configBuilder: MarketingCloudConfig.Builder
+    val configBuilder: MarketingCloudConfig.Builder
         get() = MarketingCloudConfig.builder().apply {
             setApplicationId(BuildConfig.MC_APP_ID)
             setAccessToken(BuildConfig.MC_ACCESS_TOKEN)

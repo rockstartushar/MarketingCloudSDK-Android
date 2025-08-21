@@ -44,13 +44,12 @@ import com.salesforce.marketingcloud.sfmcsdk.SFMCSdk
 import com.salesforce.marketingcloud.sfmcsdk.SFMCSdkModuleConfig
 import com.salesforce.marketingcloud.sfmcsdk.components.logging.LogLevel
 import com.salesforce.marketingcloud.sfmcsdk.components.logging.LogListener
+import com.salesforce.marketingcloud.notifications.NotificationCustomizationOptions
+import com.salesforce.marketingcloud.sfmcsdk.modules.push.PushModuleConfig
 
 const val LOG_TAG = "~#MCLearningApp"
 
-abstract class BaseLearningApplication : Application(), UrlHandler {
-
-    internal abstract val configBuilder: MarketingCloudConfig.Builder
-
+open class BaseLearningApplication : Application(), UrlHandler {
     override fun onCreate() {
         super.onCreate()
 
@@ -62,11 +61,13 @@ abstract class BaseLearningApplication : Application(), UrlHandler {
             SFMCSdk.requestSdk { sdk ->
                 Log.i(LOG_TAG, sdk.getSdkState().toString(2)) // Show the SDK State on launch
                 sdk.mp { push ->
-                    push.registrationManager.registerForRegistrationEvents {
-                        // Log the registration on successful sends to the MC
-                        Log.i(LOG_TAG, "Registration Updated: $it")
-                        Log.i(LOG_TAG, sdk.getSdkState().toString(2)) // Show the SDK State on Registration update
-                    }
+                    val marketingCloudConfig =
+
+                        push.registrationManager.registerForRegistrationEvents {
+                            // Log the registration on successful sends to the MC
+                            Log.i(LOG_TAG, "Registration Updated: $it")
+                            Log.i(LOG_TAG, sdk.getSdkState().toString(2)) // Show the SDK State on Registration update
+                        }
                 }
             }
         }
@@ -74,25 +75,30 @@ abstract class BaseLearningApplication : Application(), UrlHandler {
         // You MUST initialize the SDK in your Application's onCreate to ensure correct
         // functionality when the app is launched from a background service (receiving push message,
         // entering a geofence, ...)
+
         SFMCSdk.configure(applicationContext as Application, SFMCSdkModuleConfig.build {
-            pushModuleConfig = configBuilder.build(applicationContext)
-        }) { initStatus ->
-            when (initStatus.status) {
-                InitializationStatus.SUCCESS -> {
-                    Log.v(LOG_TAG, "Marketing Cloud initialization successful.")
-                }
-
-                InitializationStatus.FAILURE -> {
-                    // Given that this app is used to show SDK functionality we will hard exit if SDK init outright failed.
-                    Log.e(
-                        LOG_TAG,
-                        "Marketing Cloud initialization failed.  Exiting Learning App with exception."
+            pushModuleConfig = MarketingCloudConfig.builder().apply {
+                setApplicationId("ab03292d-0cad-4ee9-b6d6-fa76818cb4b6")
+                setAccessToken("PlxJB1YSeKcr9zpkuSpj69eG")
+                setSenderId("232379793071")
+                setMarketingCloudServerUrl("https://mc6vgk-sxj9p08pqwxqz9hw9-4my.device.marketingcloudapis.com/")
+                setNotificationCustomizationOptions(
+                    NotificationCustomizationOptions.create(
+                        R.drawable.ic_notification,
+                        null,
+                        null
                     )
-                    throw RuntimeException("Init failed")
-
-                }
+                )
+                // Other configuration options
+            }.build(applicationContext)
+        }) { initStatus ->
+            // TODO handle initialization status
+            when (initStatus.status) {
+                InitializationStatus.SUCCESS -> Log.v(LOG_TAG, "Marketing Cloud initialization successful.")
+                InitializationStatus.FAILURE -> throw RuntimeException("Init failed")
             }
         }
+
 
         SFMCSdk.requestSdk { sdk ->
             sdk.mp {
@@ -115,8 +121,8 @@ abstract class BaseLearningApplication : Application(), UrlHandler {
 
                     setInAppMessageListener(object : InAppMessageManager.EventListener {
                         override fun shouldShowMessage(message: InAppMessage): Boolean {
-                            // This method will be called before a in app message is presented.  You can return `false` to
-                            // prevent the message from being displayed.  You can later use call `InAppMessageManager#showMessage`
+                            // This method will be called before a in app message is presented.  You can return false to
+                            // prevent the message from being displayed.  You can later use call InAppMessageManager#showMessage
                             // to display the message if the message is still on the device and active.
                             return true
                         }
@@ -142,4 +148,8 @@ abstract class BaseLearningApplication : Application(), UrlHandler {
             PendingIntent.FLAG_UPDATE_CURRENT
         )
     }
+}
+
+private fun MarketingCloudConfig.Builder.build() {
+    TODO("Not yet implemented")
 }
